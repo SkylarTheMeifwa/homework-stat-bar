@@ -1,12 +1,42 @@
 // SubjectCard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AddTaskModal from './AddTaskModal';
 import { rankTitlesMap } from './data';
+import useSound from 'use-sound';
+import xpSmallSfx from './sounds/xp-small.mp3';
+import xpMediumSfx from './sounds/xp-medium.mp3';
+import xpLargeSfx from './sounds/xp-large.mp3';
+import xpTotalSfx from './sounds/xp-total.mp3';
+import rankUpSfx from './sounds/rank-up.mp3';
 
 export default function SubjectCard({ subject, data, onAddTask }) {
   const [showModal, setShowModal] = useState(false);
+  const [prevXP, setPrevXP] = useState(data.xp);
+  const [prevRank, setPrevRank] = useState(data.rank);
+
+  const [playSmall] = useSound(xpSmallSfx);
+  const [playMedium] = useSound(xpMediumSfx);
+  const [playLarge] = useSound(xpLargeSfx);
+  const [playTotal] = useSound(xpTotalSfx);
+  const [playRankUp] = useSound(rankUpSfx);
 
   const rankTitles = rankTitlesMap[subject.id];
+
+  useEffect(() => {
+    const latestTask = data.tasks[data.tasks.length - 1];
+    if (!latestTask) return;
+    if (latestTask.xp >= 5) playLarge();
+    else if (latestTask.xp >= 3) playMedium();
+    else playSmall();
+    playTotal();
+
+    if (data.rank > prevRank) {
+      playRankUp();
+    }
+
+    setPrevXP(data.xp);
+    setPrevRank(data.rank);
+  }, [data.xp]);
 
   return (
     <div className="bg-white text-black p-4 rounded-2xl shadow-lg relative">
