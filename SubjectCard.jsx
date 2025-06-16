@@ -8,11 +8,13 @@ import xpMediumSfx from './sounds/xp-medium.mp3';
 import xpLargeSfx from './sounds/xp-large.mp3';
 import xpTotalSfx from './sounds/xp-total.mp3';
 import rankUpSfx from './sounds/rank-up.mp3';
+import RankUpAnimation from './RankUpAnimation';
 
 export default function SubjectCard({ subject, data, onAddTask }) {
   const [showModal, setShowModal] = useState(false);
   const [prevXP, setPrevXP] = useState(data.xp);
   const [prevRank, setPrevRank] = useState(data.rank);
+  const [showRankUpAnim, setShowRankUpAnim] = useState(false);
 
   const [playSmall] = useSound(xpSmallSfx);
   const [playMedium] = useSound(xpMediumSfx);
@@ -32,6 +34,8 @@ export default function SubjectCard({ subject, data, onAddTask }) {
 
     if (data.rank > prevRank) {
       playRankUp();
+      setShowRankUpAnim(true);
+      setTimeout(() => setShowRankUpAnim(false), 2000);
     }
 
     setPrevXP(data.xp);
@@ -39,7 +43,8 @@ export default function SubjectCard({ subject, data, onAddTask }) {
   }, [data.xp]);
 
   return (
-    <div className="bg-white text-black p-4 rounded-2xl shadow-lg relative">
+    <div className="bg-white text-black p-4 rounded-2xl shadow-lg relative overflow-hidden">
+      {showRankUpAnim && <RankUpAnimation />}
       <h2 className="text-xl font-bold text-red-600">{subject.name}</h2>
       <p className="mb-2">Rank: <span className="font-semibold">{rankTitles[data.rank]}</span> (XP: {data.xp})</p>
       <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
