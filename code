@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Customizable Homework Tracker</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background-color: #f0f4f7;
+      margin-top: 40px;
+    }
+
+    .points {
+      font-size: 3em;
+    }
+
+    .rank {
+      font-size: 1.5em;
+      margin: 20px 0;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .rank.animate {
+      transform: scale(1.3);
+      color: #2e86de;
+    }
+
+    button {
+      font-size: 1em;
+      padding: 10px 20px;
+      margin: 10px;
+    }
+
+    .progress-container {
+      width: 80%;
+      background-color: #ddd;
+      border-radius: 10px;
+      height: 30px;
+      margin: 20px auto;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: gray;
+      transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+    }
+
+    .progress-label {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .rank-setup {
+      margin: 30px auto;
+      width: 400px;
+    }
+
+    .rank-entry {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .rank-entry input[type="text"],
+    .rank-entry input[type="number"] {
+      padding: 5px;
+      font-size: 1em;
+      flex: 1;
+    }
+
+    .rank-entry button {
+      background: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Custom Homework Tracker</h1>
+
+  <div class="rank-setup" id="rankSetup">
+    <h3>Customize Ranks</h3>
+    <div id="rankInputs"></div>
+    <div class="controls">
+      <button onclick="addRank()">Add Rank</button>
+      <button onclick="startTracker()">Start Tracker</button>
+    </div>
+  </div>
+
+  <div id="tracker" style="display:none;">
+    <div class="points" id="points">0</div>
+    <div class="rank" id="rank">Rank: -</div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-label" id="progressLabel">0 / 0</div>
+    </div>
+
+    <button onclick="increasePoints(1)">+1 Point</button>
+    <button onclick="increasePoints(5)">+5 Points</button>
+    <button onclick="increasePoints(10)">+10 Points</button>
+    <br />
+    <button onclick="resetTracker()" style="background-color:#f55;color:white;">Reset Tracker</button>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="soundAdd" src="https://www.soundjay.com/button/button-29.mp3" preload="auto"></audio>
+  <audio id="soundLow" src="https://www.soundjay.com/button/beep-01a.mp3" preload="auto"></audio>
+  <audio id="soundMid" src="https://www.soundjay.com/button/beep-02.mp3" preload="auto"></audio>
+  <audio id="soundHigh" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+  <audio id="soundRankUp" src="https://www.soundjay.com/misc/small-bell-ring-01a.mp3" preload="auto"></audio>
+
+  <script>
+    let points = 0;
+    let currentRankIndex = 0;
+    let ranks = [];
+
+    const pointsEl = document.getElementById("points");
+    const rankEl = document.getElementById("rank");
+    const progressBar = document.getElementById("progressBar");
+    const progressLabel = document.getElementById("progressLabel");
+    const rankInputsContainer = document.getElementById("rankInputs");
+
+    function addRank(name = "", required = "") {
+      const div = document.createElement("div");
+      div.className = "rank-entry";
+      div.innerHTML = `
+        <input type="text" placeholder="Rank Name" value="${name}" />
+        <input type="number" placeholder="Points Required" value="${required}" />
+        <button onclick="this.parentElement.remove()">X</button>
+      `;
+      rankInputsContainer.appendChild(div);
+    }
+
+    function playSound(id) {
+      const audio = document.getElementById(id);
+      audio.currentTime = 0;
+      audio.play();
+    }
+
+    function startTracker() {
+      const inputs = rankInputsContainer.querySelectorAll(".rank-entry");
+      ranks = [];
+      inputs.forEach((entry, i) => {
+        const name = entry.querySelector("input[type='text']").value.trim();
+        const pointsRequired = parseInt(entry.querySelector("input[type='number']").value);
+        if (name && !isNaN(pointsRequired)) {
+          ranks.push({
+            name: name,
+            pointsRequired: pointsRequired,
+            color: getColor(i)
+          });
+        }
+      });
+
+      ranks.sort((a, b) => a.pointsRequired - b.pointsRequired);
+
+      if (ranks.length === 0) {
+        alert("Please add at least one valid rank.");
+        return;
+      }
+
+      currentRankIndex = ranks.findIndex(r => points < r.pointsRequired);
+      if (currentRankIndex === -1) currentRankIndex = ranks.length;
+
+      saveState();
+
+      document.getElementById("rankSetup").style.display = "none";
+      document.getElementById("tracker").style.display = "block";
+
+      updatePointsDisplay();
+      updateProgress();
+    }
+
+    function increasePoints(amount) {
+      playSound("soundAdd");
+
+      if (amount >= 10) playSound("soundHigh");
+      else if (amount >= 5) playSound("soundMid");
+      else playSound("soundLow");
+
+      points += amount;
+      updatePointsDisplay();
+      updateProgress();
+      saveState();
+
+      while (
+        currentRankIndex < ranks.length &&
+        points >= ranks[currentRankIndex].pointsRequired
+      ) {
+        currentRankIndex++;
+        if (currentRankIndex < ranks.length) {
+          rankEl.textContent = `Rank: ${ranks[currentRankIndex].name}`;
+          triggerRankAnimation();
+          playSound("soundRankUp");
+        } else {
+          rankEl.textContent = `Rank: ${ranks[ranks.length - 1].name} (Complete)`;
+          playSound("soundRankUp");
+        }
+        saveState();
+      }
+    }
+
+    function updatePointsDisplay() {
+      pointsEl.textContent = points;
+      rankEl.textContent =
+        currentRankIndex < ranks.length
+          ? `Rank: ${ranks[currentRankIndex].name}`
+          : `Rank: ${ranks[ranks.length - 1].name} (Complete)`;
+    }
+
+    function updateProgress() {
+      if (ranks.length === 0) return;
+
+      const maxPoints = ranks[ranks.length - 1].pointsRequired;
+      const progress = Math.min(points / maxPoints, 1);
+      progressBar.style.width = `${progress * 100}%`;
+      progressLabel.textContent = `${points} / ${maxPoints}`;
+
+      const color =
+        currentRankIndex < ranks.length
+          ? ranks[currentRankIndex].color
+          : ranks[ranks.length - 1].color;
+
+      progressBar.style.backgroundColor = color;
+    }
+
+    function triggerRankAnimation() {
+      rankEl.classList.add("animate");
+      setTimeout(() => {
+        rankEl.classList.remove("animate");
+      }, 800);
+    }
+
+    function resetTracker() {
+      localStorage.removeItem("homeworkTracker");
+      location.reload();
+    }
+
+    function saveState() {
+      localStorage.setItem(
+        "homeworkTracker",
+        JSON.stringify({
+          points,
+          currentRankIndex,
+          ranks
+        })
+      );
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem("homeworkTracker");
+      if (!saved) return false;
+
+      const state = JSON.parse(saved);
+      points = state.points;
+      currentRankIndex = state.currentRankIndex;
+      ranks = state.ranks;
+
+      ranks.forEach(r => addRank(r.name, r.pointsRequired));
+
+      document.getElementById("rankSetup").style.display = "none";
+      document.getElementById("tracker").style.display = "block";
+
+      updatePointsDisplay();
+      updateProgress();
+      return true;
+    }
+
+    function getColor(i) {
+      const colors = ["gray", "green", "dodgerblue", "purple", "gold", "darkorange", "teal", "crimson"];
+      return colors[i % colors.length];
+    }
+
+    // Load previous state or start with default inputs
+    if (!loadState()) {
+      addRank("Homework 7", 10);
+      addRank("Homework 8", 25);
+      addRank("Homework 9", 50);
+      addRank("Homework 10", 100);
+      addRank("Review", 200);
+    }
+  </script>
+</body>
+</html>
