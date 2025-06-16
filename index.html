@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Homework Tracker 🎵</title>
   <style>
     body {
@@ -61,6 +61,7 @@
       font-size: 3em;
       cursor: pointer;
       transition: transform 0.2s ease;
+      min-height: 1em;
     }
 
     .button-row {
@@ -138,9 +139,9 @@
   </div>
 
   <div class="button-row">
-    <button onclick="showNotes(1)">Earn 1 Point</button>
-    <button onclick="showNotes(3)">Earn 3 Points</button>
-    <button onclick="showNotes(6)">Earn 6 Points</button>
+    <button onclick="playSound('soundLow'); showNotes(1)">Earn 1 Point</button>
+    <button onclick="playSound('soundMid'); showNotes(3)">Earn 3 Points</button>
+    <button onclick="playSound('soundHigh'); showNotes(6)">Earn 6 Points</button>
   </div>
 
   <div id="noteContainer" class="note-display"></div>
@@ -156,7 +157,7 @@
   <audio id="soundAdd" src="Sound-Effects/Point-Up.wav" preload="auto"></audio>
   <audio id="soundLow" src="Sound-Effects/One-Music-Note.wav" preload="auto"></audio>
   <audio id="soundMid" src="Sound-Effects/Two-Music-Notes.wav" preload="auto"></audio>
-  <audio id="soundHigh" src="Sound-Effects/Three=Music-Notes.wav" preload="auto"></audio>
+  <audio id="soundHigh" src="Sound-Effects/Three-Music-Notes.wav" preload="auto"></audio>
   <audio id="soundRankUp" src="Sound-Effects/Rank-up.wav" preload="auto"></audio>
 
   <script>
@@ -187,7 +188,7 @@
       }
     }
 
-    function showNotes(amount) {
+    async function showNotes(amount) {
       let noteCount = 1;
       if (amount >= 6) noteCount = 3;
       else if (amount >= 3) noteCount = 2;
@@ -210,6 +211,9 @@
         };
 
         noteContainer.appendChild(note);
+
+        // Wait 400ms before showing the next note
+        await new Promise(resolve => setTimeout(resolve, 400));
       }
     }
 
@@ -292,9 +296,9 @@
         const entry = document.createElement("div");
         entry.className = "rank-entry";
         entry.innerHTML = `
-          <input class="rank-name" type="text" value="${rank.name}" placeholder="Rank Name">
-          <input class="rank-points" type="number" value="${rank.pointsRequired}" placeholder="Points">
-          <input class="rank-color" type="color" value="${rank.color}">
+          <input class="rank-name" type="text" value="${rank.name}" placeholder="Rank Name" />
+          <input class="rank-points" type="number" value="${rank.pointsRequired}" placeholder="Points" />
+          <input class="rank-color" type="color" value="${rank.color}" />
           <button onclick="deleteRank(${i})">❌</button>
         `;
         rankEditor.appendChild(entry);
