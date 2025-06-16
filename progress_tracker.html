@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Progress Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f4f4f4;
+    }
+    #progressContainer {
+      margin-bottom: 20px;
+    }
+    #progressBar {
+      width: 100%;
+      height: 30px;
+      background-color: #ddd;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    #progressBarInner {
+      height: 100%;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+      border-radius: 15px;
+      transition: width 0.3s;
+    }
+    .rankEditor {
+      margin: 10px 0;
+    }
+    .rankEditor input {
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Progress Tracker</h1>
+
+  <div id="progressContainer">
+    <label for="pointsInput">Points:</label>
+    <input type="number" id="pointsInput" value="0" />
+    <button onclick="updatePoints()">Update</button>
+    <p id="rankDisplay">Current Rank: None</p>
+    <div id="progressBar">
+      <div id="progressBarInner" style="width: 0%; background-color: grey;"></div>
+    </div>
+  </div>
+
+  <h2>Edit Ranks</h2>
+  <div id="rankEditorContainer"></div>
+  <button onclick="addNewRank()">Add New Rank</button>
+  <button onclick="saveRankChanges()">Save Changes</button>
+
+  <script>
+    let ranks = JSON.parse(localStorage.getItem("ranks")) || [
+      { name: "Beginner", pointsRequired: 0, color: "#4caf50" },
+      { name: "Intermediate", pointsRequired: 50, color: "#2196f3" },
+      { name: "Advanced", pointsRequired: 100, color: "#f44336" },
+    ];
+    let currentPoints = parseInt(localStorage.getItem("points")) || 0;
+
+    function updatePoints() {
+      currentPoints = parseInt(document.getElementById("pointsInput").value);
+      localStorage.setItem("points", currentPoints);
+      updateProgress();
+    }
+
+    function updateProgress() {
+      let currentRank = { name: "None", color: "grey", pointsRequired: 0 };
+      let nextRank = null;
+
+      for (let i = 0; i < ranks.length; i++) {
+        if (currentPoints >= ranks[i].pointsRequired) {
+          currentRank = ranks[i];
+        } else {
+          nextRank = ranks[i];
+          break;
+        }
+      }
+
+      let percentToNext = 100;
+      if (nextRank) {
+        let diff = nextRank.pointsRequired - currentRank.pointsRequired;
+        let progress = currentPoints - currentRank.pointsRequired;
+        percentToNext = Math.min((progress / diff) * 100, 100);
+      }
+
+      document.getElementById("rankDisplay").textContent = `Current Rank: ${currentRank.name}`;
+      const bar = document.getElementById("progressBarInner");
+      bar.style.width = percentToNext + "%";
+      bar.style.backgroundColor = currentRank.color;
+      bar.textContent = Math.floor(percentToNext) + "%";
+    }
+
+    function renderRankEditor() {
+      const container = document.getElementById("rankEditorContainer");
+      container.innerHTML = "";
+      ranks.forEach((rank, index) => {
+        const div = document.createElement("div");
+        div.className = "rankEditor";
+        div.innerHTML = \`
+          <label>Rank \${index + 1}:</label>
+          <input type="text" value="\${rank.name}" onchange="editRankName(\${index}, this.value)" />
+          <input type="number" value="\${rank.pointsRequired}" onchange="editRankPoints(\${index}, this.value)" />
+          <input type="color" value="\${rank.color}" onchange="editRankColor(\${index}, this.value)" />
+          <button onclick="removeRank(\${index})">Delete</button>
+        \`;
+        container.appendChild(div);
+      });
+    }
+
+    function editRankName(index, value) {
+      ranks[index].name = value;
+    }
+
+    function editRankPoints(index, value) {
+      ranks[index].pointsRequired = parseInt(value);
+    }
+
+    function editRankColor(index, value) {
+      ranks[index].color = value;
+    }
+
+    function removeRank(index) {
+      ranks.splice(index, 1);
+      renderRankEditor();
+      updateProgress();
+    }
+
+    function addNewRank() {
+      ranks.push({ name: "New Rank", pointsRequired: 0, color: "#808080" });
+      renderRankEditor();
+      saveRankChanges();
+    }
+
+    function saveRankChanges() {
+      ranks.sort((a, b) => a.pointsRequired - b.pointsRequired);
+      localStorage.setItem("ranks", JSON.stringify(ranks));
+      updateProgress();
+    }
+
+    function updatePointsDisplay() {
+      document.getElementById("pointsInput").value = currentPoints;
+    }
+
+    // Initial Load
+    renderRankEditor();
+    updatePointsDisplay();
+    updateProgress();
+  </script>
+</body>
+</html>
