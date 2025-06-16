@@ -15,6 +15,8 @@ export default function SubjectCard({ subject, data, onAddTask }) {
   const [prevXP, setPrevXP] = useState(data.xp);
   const [prevRank, setPrevRank] = useState(data.rank);
   const [showRankUpAnim, setShowRankUpAnim] = useState(false);
+  const [xpFlash, setXpFlash] = useState(false);
+  const [cardFlash, setCardFlash] = useState(false);
 
   const [playSmall] = useSound(xpSmallSfx);
   const [playMedium] = useSound(xpMediumSfx);
@@ -32,6 +34,12 @@ export default function SubjectCard({ subject, data, onAddTask }) {
     else playSmall();
     playTotal();
 
+    // Trigger XP visual flashes
+    setXpFlash(true);
+    setCardFlash(true);
+    setTimeout(() => setXpFlash(false), 600);
+    setTimeout(() => setCardFlash(false), 300);
+
     if (data.rank > prevRank) {
       playRankUp();
       setShowRankUpAnim(true);
@@ -43,13 +51,15 @@ export default function SubjectCard({ subject, data, onAddTask }) {
   }, [data.xp]);
 
   return (
-    <div className="bg-white text-black p-4 rounded-2xl shadow-lg relative overflow-hidden">
+    <div
+      className={`bg-white text-black p-4 rounded-2xl shadow-lg relative overflow-hidden transition-all duration-300 ${cardFlash ? 'ring-4 ring-yellow-300' : ''}`}
+    >
       {showRankUpAnim && <RankUpAnimation />}
       <h2 className="text-xl font-bold text-red-600">{subject.name}</h2>
       <p className="mb-2">Rank: <span className="font-semibold">{rankTitles[data.rank]}</span> (XP: {data.xp})</p>
-      <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+      <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
         <div
-          className="bg-red-500 h-4 rounded-full transition-all duration-500"
+          className={`bg-red-500 h-4 rounded-full transition-all duration-500 ${xpFlash ? 'animate-pulse' : ''}`}
           style={{ width: `${Math.min(data.xp, 75) / 75 * 100}%` }}
         ></div>
       </div>
