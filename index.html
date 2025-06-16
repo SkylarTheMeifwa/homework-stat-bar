@@ -328,7 +328,205 @@
     renderRankEditor();
     updatePointsDisplay();
     updateProgress();
-  </script>
+  <script>
+  let points = 0;
+  let currentRankIndex = 0;
+  let ranks = [];
+
+  const pointsEl = document.getElementById("points");
+  const rankEl = document.getElementById("rank");
+  const progressBar = document.getElementById("progressBar");
+  const progressLabel = document.getElementById("progressLabel");
+  const noteContainer = document.getElementById("noteContainer");
+  const rankEditor = document.getElementById("rankEditor");
+
+  const defaultRanks = [
+    { name: "Homework 7", pointsRequired: 10, color: "gray" },
+    { name: "Homework 8", pointsRequired: 25, color: "green" },
+    { name: "Homework 9", pointsRequired: 50, color: "dodgerblue" },
+    { name: "Homework 10", pointsRequired: 100, color: "purple" },
+    { name: "Review", pointsRequired: 200, color: "gold" }
+  ];
+
+  function playSound(id) {
+    const audio = document.getElementById(id);
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play();
+    }
+  }
+
+  async function showNotes(amount) {
+    let noteCount = 1;
+    if (amount >= 6) noteCount = 3;
+    else if (amount >= 3) noteCount = 2;
+
+    const noteColor = currentRankIndex < ranks.length
+      ? ranks[currentRankIndex].color
+      : "black";
+
+    noteContainer.innerHTML = "";
+
+    for (let i = 0; i < noteCount; i++) {
+      const note = document.createElement("span");
+      note.className = "bounce-note";
+      note.textContent = "🎵";
+      note.style.color = noteColor;
+
+      note.onclick = () => {
+        noteContainer.innerHTML = "";
+        addPoints(amount);
+      };
+
+      noteContainer.appendChild(note);
+
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
+  }
+
+  function addPoints(amount) {
+    playSound("soundAdd");
+
+    if (amount >= 6) playSound("soundHigh");
+    else if (amount >= 3) playSound("soundMid");
+    else playSound("soundLow");
+
+    points += amount;
+    checkForRankUp();
+    updatePointsDisplay();
+    updateProgress();
+    saveState();
+  }
+
+  function checkForRankUp() {
+    let rankUp = false;
+    while (
+      currentRankIndex < ranks.length &&
+      points >= ranks[currentRankIndex].pointsRequired
+    ) {
+      currentRankIndex++;
+      rankUp = true;
+    }
+
+    if (rankUp) {
+      triggerRankAnimation();
+      playSound("soundRankUp");
+    }
+  }
+
+  function updatePointsDisplay() {
+    pointsEl.textContent = points;
+
+    if (currentRankIndex < ranks.length) {
+      rankEl.textContent = `Rank: ${ranks[currentRankIndex].name}`;
+    } else if (ranks.length > 0) {
+      rankEl.textContent = `Rank: ${ranks[ranks.length - 1].name} (Complete)`;
+    } else {
+      rankEl.textContent = "Rank: -";
+    }
+  }
+
+  function updateProgress() {
+    const maxPoints = ranks[ranks.length - 1]?.pointsRequired || 100;
+    const progress = Math.min(points / maxPoints, 1);
+    progressBar.style.width = `${progress * 100}%`;
+    progressLabel.textContent = `${points} / ${maxPoints}`;
+    progressBar.style.backgroundColor =
+      currentRankIndex < ranks.length
+        ? ranks[currentRankIndex].color
+        : ranks[ranks.length - 1]?.color || "gray";
+  }
+
+  function triggerRankAnimation() {
+    rankEl.classList.add("animate");
+    setTimeout(() => rankEl.classList.remove("animate"), 800);
+  }
+
+  function resetTracker() {
+    localStorage.removeItem("musicNoteTracker");
+    localStorage.removeItem("musicNoteRanks");
+    location.reload();
+  }
+
+  function saveState() {
+    localStorage.setItem("musicNoteTracker", JSON.stringify({
+      points,
+      currentRankIndex
+    }));
+  }
+
+  function saveRankChanges() {
+    const inputs = rankEditor.querySelectorAll(".rank-entry");
+    ranks = Array.from(inputs).map(entry => ({
+      name: entry.querySelector(".rank-name").value || "Unnamed",
+      pointsRequired: parseInt(entry.querySelector(".rank-points").value) || 0,
+      color: entry.querySelector(".rank-color").value || "gray"
+    }));
+
+    // Re-sort ranks by pointsRequired just in case
+    ranks.sort((a, b) => a.pointsRequired - b.pointsRequired);
+
+    // Recalculate current rank index after rank edit
+    currentRankIndex = 0;
+    for (let i = 0; i < ranks.length; i++) {
+      if (points >= ranks[i].pointsRequired) currentRankIndex = i + 1;
+    }
+
+    localStorage.setItem("musicNoteRanks", JSON.stringify(ranks));
+    updatePointsDisplay();
+    updateProgress();
+    renderRankEditor();
+  }
+
+  function addNewRank() {
+    ranks.push({ name: "New Rank", pointsRequired: 0, color: "gray" });
+    renderRankEditor();
+  }
+
+  function renderRankEditor() {
+    rankEditor.innerHTML = "";
+    ranks.forEach((rank, i) => {
+      const entry = document.createElement("div");
+      entry.className = "rank-entry";
+      entry.innerHTML = `
+        <input class="rank-name" type="text" value="${rank.name}" placeholder="Rank Name" />
+        <input class="rank-points" type="number" value="${rank.pointsRequired}" placeholder="Points" />
+        <input class="rank-color" type="color" value="${rank.color}" />
+        <button onclick="deleteRank(${i})">❌</button>
+      `;
+      rankEditor.appendChild(entry);
+    });
+  }
+
+  function deleteRank(index) {
+    ranks.splice(index, 1);
+    renderRankEditor();
+    saveRankChanges();
+  }
+
+  function loadState() {
+    const saved = JSON.parse(localStorage.getItem("musicNoteTracker"));
+    const savedRanks = JSON.parse(localStorage.getItem("musicNoteRanks"));
+
+    ranks = savedRanks || defaultRanks;
+
+    if (saved) {
+      points = saved.points || 0;
+      currentRankIndex = saved.currentRankIndex || 0;
+
+      // Recalculate currentRankIndex in case ranks changed
+      for (let i = 0; i < ranks.length; i++) {
+        if (points >= ranks[i].pointsRequired) currentRankIndex = i + 1;
+      }
+    }
+  }
+
+  // Init
+  loadState();
+  renderRankEditor();
+  updatePointsDisplay();
+  updateProgress();
+</script>
 
 </body>
 </html>
