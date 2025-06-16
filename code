@@ -153,11 +153,11 @@
   <button onclick="saveRankChanges()">Save Ranks</button>
 
   <!-- Sound Effects -->
-  <audio id="soundAdd" src="https://www.soundjay.com/button/button-29.mp3" preload="auto"></audio>
-  <audio id="soundLow" src="https://www.soundjay.com/button/beep-01a.mp3" preload="auto"></audio>
-  <audio id="soundMid" src="https://www.soundjay.com/button/beep-02.mp3" preload="auto"></audio>
-  <audio id="soundHigh" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
-  <audio id="soundRankUp" src="https://www.soundjay.com/misc/small-bell-ring-01a.mp3" preload="auto"></audio>
+  <audio id="soundAdd" src="Sound Effects/Point Up.wav" preload="auto"></audio>
+  <audio id="soundLow" src="Sound Effects/One Music Note.wav" preload="auto"></audio>
+  <audio id="soundMid" src="Sound Effects/Two Music Notes.wav" preload="auto"></audio>
+  <audio id="soundHigh" src="Sound Effects/Three Music Notes.wav" preload="auto"></audio>
+  <audio id="soundRankUp" src="Sound Effects/Rank up.wav" preload="auto"></audio>
 
   <script>
     let points = 0;
