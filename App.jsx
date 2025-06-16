@@ -1,7 +1,7 @@
 // App.jsx
 import React, { useState } from 'react';
 import SubjectCard from './SubjectCard';
-import { subjects } from './data';
+import { subjects, rankThresholdsMap } from './data';
 
 export default function App() {
   const [subjectData, setSubjectData] = useState(
@@ -15,7 +15,7 @@ export default function App() {
     setSubjectData(prev => {
       const subject = prev[id];
       const newXP = subject.xp + task.xp;
-      const newRank = getRank(newXP);
+      const newRank = getRank(id, newXP);
       return {
         ...prev,
         [id]: {
@@ -35,11 +35,11 @@ export default function App() {
     }, {}));
   };
 
-  const getRank = (xp) => {
-    if (xp >= 75) return 5;
-    if (xp >= 50) return 4;
-    if (xp >= 25) return 3;
-    if (xp >= 10) return 2;
+  const getRank = (subjectId, xp) => {
+    const thresholds = rankThresholdsMap[subjectId];
+    for (let i = thresholds.length - 1; i >= 0; i--) {
+      if (xp >= thresholds[i]) return i + 1;
+    }
     return 1;
   };
 
