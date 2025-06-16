@@ -1,11 +1,12 @@
 // SubjectCard.jsx
 import React, { useState } from 'react';
 import AddTaskModal from './AddTaskModal';
+import { rankTitlesMap } from './data';
 
 export default function SubjectCard({ subject, data, onAddTask }) {
   const [showModal, setShowModal] = useState(false);
 
-  const rankTitles = ["", "Oblivious", "Learned", "Scholarly", "Encyclopedic", "Erudite"];
+  const rankTitles = rankTitlesMap[subject.id];
 
   return (
     <div className="bg-white text-black p-4 rounded-2xl shadow-lg relative">
